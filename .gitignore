@@ -1,0 +1,6 @@
+*.pyc
+school_lunch/*
+venv/*
+trained_models/*
+.DS_Store
+school_lunch.zip
