@@ -99,6 +99,8 @@ class Model(nn.Module):
         )
             
         self.activation = nn.Sigmoid()
+        
+        self.embedding_size = linears[-1]
     
     def get_features(self, X):
         X = self.features(X)
@@ -161,8 +163,10 @@ vgg16 = vgg16.to(device)
 transforms = tv.models.VGG16_Weights.DEFAULT.transforms()
 
 @torch.no_grad()
-def get_features(model, path):
-    X = transforms(Image.open(path))
+def get_features(model, path_or_image):
+    if isinstance(path_or_image, str):
+        path_or_image = Image.open(Image.open(path))
+    X = transforms(path_or_image)
     X = model.features(X.to(device))
     X = F.avg_pool2d(X, kernel_size=X.shape[-2:])[..., 0, 0]
     return X
@@ -199,7 +203,7 @@ def train_and_validate(embedding_size=16, predict_photos=[]):
     model = model.to(device)
     optimizer = optim.AdamW(model.parameters(), lr=0.0001, )
     triplet_loss = TripletLoss(0.5)
-    epochs = 3
+    epochs = 1
     train_loss, valid_loss = [], []
     for epoch_i in range(epochs):
         train_loader.dataset.load_epoch(epoch_i)
@@ -238,7 +242,7 @@ def train_and_validate(embedding_size=16, predict_photos=[]):
         train_loss.append(epoch_loss)
         print(f"{epoch_i}: Train Loss: {epoch_loss} Val loss: {val_loss} Acc: {accuracy}")
     clss = predict_class(model, embedding_size, feature_loader, predict_photos)
-    return valid_loss, train_loss, model, clss
+    return valid_loss, train_loss, model, feature_loader, clss
 
 
 
